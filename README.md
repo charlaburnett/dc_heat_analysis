@@ -1,106 +1,114 @@
-# DC Urban Heat & Climate OSINT Analysis (2015–2025)
+# DC Urban Heat Change Analysis (2015–2025)
 
-This project combines geospatial analysis, open-source intelligence (OSINT), and AI-assisted interpretation to assess heat wave patterns and urban heat island (UHI) effects in Washington, D.C. between 2015 and 2025.
+This repository analyzes changes in land surface temperature (LST) in Washington, DC using **Landsat 8 thermal imagery**, **land cover data**, and **census income data**. The project explores how urban heat island (UHI) effects have evolved over a 10-year period and investigates potential correlations with socioeconomic indicators.
 
-It integrates:
+We integrate zonal statistics, robust regression, outlier detection, and OSINT analysis of climate-related news to contextualize urban heat change and its spatial patterns.
 
-- **Satellite-derived urban heat island changes**
-- **Scraped news headlines about extreme heat events** (via GNews API)
-- **U.S. Census tract-level household income data**
-- **Statistical regression and GPT-4 interpretation**
-
----
-
-![Urban Heat Map – Washington DC](temporal-heat-map-dc.png)
-
----
-
-## Objectives
-
-- Detect spatial and temporal heat changes from 2015 to 2025
-- Link those changes to real-world reported events
-- Analyze correlation between median income and temperature change
-- Use AI to interpret complex patterns for urban resilience planning
-
----
-
-## Technologies Used
-
-- Python (Google Colab, Jupyter)
-- Libraries: `geopandas`, `requests`, `statsmodels`, `seaborn`, `matplotlib`
-- APIs: GNews, OpenAI GPT-4, U.S. Census API
-- Data: TIGER/Line shapefiles, NLCD & Landsat-derived heat rasters
-
----
-
-## Repository Contents
-
-| File | Description |
-|------|-------------|
-| [`dc-heat-osint.ipynb`](./dc-heat-osint.ipynb) | Merges OSINT headlines, satellite data, and regression |
-| [`dc_heat_analysis.ipynb`](./dc_heat_analysis.ipynb) | Exploratory analysis of temperature change across neighborhoods |
-| `temporal-heat-map-dc.png` | Visualization of heat hotspots over time |
-
----
-
-## Data Access
-
-Due to GitHub file size limitations, shapefiles and satellite rasters are hosted on Google Drive:
-
-📁 **[Download Full Dataset (Shapefiles + TIGER/Line + Merged CSVs)](https://drive.google.com/drive/folders/1YKCJtaHW_XrL2SuLIOhImUCbyeQlTM-B?usp=drive_link)**
-
-Includes:
-- `uhi_temp_change_2015_2025_fahrenheit.shp`
-- TIGER/Line shapefiles for DC census tracts
-- Merged GeoDataFrame with heat and income
-- Intermediate raster and land cover data used for UHI analysis
-
----
-
-## Data Sources
-
-- **Landsat 8 Surface Temperature**  
-  Source: `LC08_L2SP_015033_20150614_20201015_02_T1_ST_B10`
-  
-- **National Land Cover Dataset (NLCD)**  
-  Source: `Annual_NLCD_LndCov_2024_CU_C1V1.tif.aux`  
-  Used for masking urban features and refining UHI estimates
-
-- **TIGER/Line Census Tracts (2021)**  
-  https://www2.census.gov/geo/tiger/TIGER2021/TRACT/
-
-- **Median Household Income**  
-  Pulled using U.S. Census API for tract-level variable `B19013_001E`
-
-- **News Headlines**  
-  Scraped via GNews API for heat-related reports 2015–2025
+**Live data + interactive maps** are too large to host here. You can [access them on Google Drive](https://drive.google.com/drive/folders/1YKCJtaHW_XrL2SuLIOhImUCbyeQlTM-B?usp=drive_link).
 
 ---
 
 ## Summary of Findings
 
-- **Frequent heatwaves** occurred in DC, especially during July/August.
-- **Top 10 zones** experienced temperature increases of up to 63.52°F.
-- **Regression analysis** found **no statistically significant relationship** between median household income and temperature change.
-- **GPT-4 analysis** recommends further exploration using land cover, vegetation, and zoning data for more robust insights.
+- Surface temperatures increased in most of DC from June 2015 to June 2025.
+- Raw ΔT (temperature change) reached as high as **+63.5°F** in some zones — later flagged as outliers and removed.
+- After z-score filtering (±3), most ΔT values ranged from **-5°F to +5°F**.
+- **Robust regression** using median household income shows no statistically significant association with heat gain (p > 0.99).
+- **AI-enhanced OSINT analysis** of climate headlines suggests intensifying summer heatwaves in DC but no consistent spatial explanation for heat spikes.
 
 ---
 
-## 🏙️ Future Work
+## Methodology
 
-- Integrate tree cover, impervious surface, and zoning layers
-- Apply spatial lag or geographically weighted regression (GWR)
-- Expand to a multi-city comparative analysis
-- Time-series forecasting of heat events and social vulnerability
+### Input Data
+
+| Type | Source |
+|------|--------|
+| **Thermal Bands** | Landsat 8 ST_B10 (2015 & 2025) |
+| **Land Cover** | `Annual_NLCD_LndCov_2024_CU_C1V1.tif.aux` |
+| **Vector Boundary** | DC extent used to clip rasters |
+| **Census Income** | Median household income via Census API (GEOID merge) |
+| **News OSINT** | Geotagged articles filtered for heat-related terms |
+
+### Analysis Workflow
+
+1. **Temperature Conversion**
+   - Landsat DN → LST Kelvin → °C → °F
+
+2. **Land Cover Classification**
+   - NLCD classes mapped to Urban, Vegetation, Water, Other
+
+3. **Zonal Statistics**
+   - Per-polygon mean temps (2015, 2025)
+   - ΔT (Temp_2025 – Temp_2015) calculated
+
+4. **Outlier Filtering**
+   - Z-score filter applied to ΔT
+   - Data capped to 1st–99th percentile
+
+5. **Regression Modeling**
+   - `statsmodels.RLM` with HuberT norm
+   - Dependent: ΔT, Independent: Median income
+   - Non-significant relationship detected
+
+6. **OSINT Integration**
+   - GPT-4 model used to cross-analyze geotagged headlines
+   - Summary adds narrative layer to spatial change data
 
 ---
 
-## ✍️ Author
+## Interactive Maps
 
-**Your Name**  
-Climate OSINT & Urban Analytics  
-📧 [your.email@example.com]
+![](temporal-heat-map-dc.png)
+
+Maps include:
+
+- Mean Surface Temperature (°F) for 2015
+- Mean Surface Temperature (°F) for 2025
+- ΔT Change Zones (°F) with `coolwarm` gradient
+- Filtered version without extreme outliers
+
+Explore and modify maps via `leafmap` in the provided notebook.
 
 ---
 
-> *"This repository was developed to demonstrate how open data and AI can be combined for climate resilience and equity-focused urban planning."*
+## Files
+
+- `dc_heat_analysis.ipynb` — Main analysis notebook (zonal stats, regression, maps)
+- `uhi_temp_change_2015_2025_fahrenheit.shp` — Final ΔT shapefile (post-filter)
+- `uhi_landcover_polygons.shp` — Classified NLCD zones
+- `nlcd_2024_dc_clipped.tif` — Clipped land cover raster
+- `lst_2015_fahrenheit.tif`, `lst_2025_fahrenheit.tif` — Surface temperature rasters
+
+Full dataset download:
+[📂 Google Drive Folder](https://drive.google.com/drive/folders/1YKCJtaHW_XrL2SuLIOhImUCbyeQlTM-B?usp=drive_link)
+
+---
+
+## Tech Stack
+
+- Python 3
+- `rasterio`, `geopandas`, `numpy`, `leafmap`, `statsmodels`, `matplotlib`
+- OpenAI API (for AI-enhanced OSINT summaries)
+- Census API (median income extraction)
+
+---
+
+## Citation
+
+If using this analysis or derived products in research, please cite:
+
+> Burnett, C. (2025). *DC Urban Heat Change Analysis (2015–2025)*. Independent spatial regression and AI-assisted media analysis.
+
+---
+
+## Contact
+
+Have questions or want to collaborate?
+
+**Email:** [charlaburnett89@gmail.com](mailto:charlaburnett89@gmail.com)  
+**GitHub:** [@charlaburnett](https://github.com/charlaburnett)
+
+---
+
+© 2025 Charla Burnett. Released under the MIT License. Data usage governed by relevant satellite and census terms.
